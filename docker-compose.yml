@@ -1,0 +1,28 @@
+version: '3'  # file format verson --> defines the syntax and features available
+services:  # Define containers created
+  juice-shop:  # First container
+    image: bkimminich/juice-shop  # Image to pull(official Juice Shop image)
+    container_name: juice-shop  # Naming the container
+    environment:  # Sets the environment in container
+      - NODE_ENV=unsafe  # Enable all vulnerabilities available in Juice Shop
+    ports:
+      - "127.0.0.1:3000:3000"  # Map container port to host port 3000 on loopback address = reachable locally ONLY.
+    networks:
+      - pentest-network  # Add container to an isolated network
+
+  pentest:  # Name of second container(for the tools)
+    build: .  # Build image from Dockerfile in current directory.
+    container_name: pentest-tools  # Naming tools container container
+    networks:
+      - pentest-network  # Add container to isolated network(same as juicr-shop container)
+    depends_on:  # Set dependency
+      - juice-shop  # tools wont run before "juice-shop" build is complete.
+    stdin_open: true  # allows typing of commands in container.
+    tty: true  # interactive terminal session
+
+networks:  # Define network
+  pentest-network:  # Naming isolated network
+    driver: bridge  # Containers on defined network can communicate
+    internal: true  # Blocks outbound internet access for all containers within network.
+                    # Makes environment isolated (Juice Shop runs "unsafe mode(NODE_ENV=unsafe)" --> 
+                    # which could open host to vulnerabilities if not isolated from internet.
